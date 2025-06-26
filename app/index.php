@@ -3,8 +3,34 @@ session_start();
 
 // Redis test
 $redis = new Redis();
-$redis->connect('todo-redis-slave', 6379);
-$message = $redis->get("status") ?: "ℹ️ No status key found on replica.";
+
+try {
+    $redis->connect('todo-redis-slave', 6379);
+
+    // Get Redis replication info
+    $info = $redis->info('replication');
+    $role = $info['role'] ?? 'unknown';
+
+    if ($role === 'slave') {
+        $masterHost = $info['master_host'] ?? 'unknown';
+        $message = "🟢 Connected to Redis <strong>replica</strong><br>📡 Master IP: <strong>$masterHost</strong>";
+
+        // Optional: read a key from replica
+        $status = $redis->get("status");
+        if ($status) {
+            $message .= "<br>📦 Status key: $status";
+        }
+
+    } elseif ($role === 'master') {
+        $redis->set("status", "✅ Redis is working!");
+        $message = "✅ Connected to Redis <strong>master</strong> and able to write.";
+    } else {
+        $message = "⚠️ Connected to Redis but role is <strong>unknown</strong>.";
+    }
+
+} catch (Exception $e) {
+    $message = "❌ Redis connection failed: " . $e->getMessage();
+}
 
 
 // Initialize session task list if not set
