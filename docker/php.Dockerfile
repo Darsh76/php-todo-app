@@ -41,6 +41,36 @@ RUN apt-get install -y \
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
     && echo "✅ GD configured"
 
+RUN docker-php-ext-install \
+        bcmath \
+        calendar \
+        ctype \
+        curl \
+        dom \
+        exif \
+        fileinfo \
+        ftp \
+        gettext \
+        iconv \
+        intl \
+        mbstring \
+        mysqli \
+        pdo \
+        pdo_mysql \
+        pcntl \
+        shmop \
+        sockets \
+        sysvmsg \
+        sysvsem \
+        sysvshm \
+        tokenizer \
+        xml \
+        xmlreader \
+        xmlwriter \
+        xsl \
+        zip \
+        opcache \
+
 # Step 5: Install and enable PECL extensions
 RUN pecl install redis igbinary \
     && docker-php-ext-enable redis igbinary \
