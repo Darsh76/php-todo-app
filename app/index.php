@@ -4,7 +4,7 @@ session_start();
 // Redis test
 try {
     $redis = new Redis();
-    $redis->connect('redis', 6379); // service name in docker-compose.yml
+    $redis->connect('todo-redis-slave', 6379); // service name in docker-compose.yml
     $redis->set("status", "✅ Redis is working!");
     $message = $redis->get("status");
 } catch (Exception $e) {
