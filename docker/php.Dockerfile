@@ -1,6 +1,6 @@
-FROM php:8.3-fpm
+FROM php:8.2-fpm
 
-# Install system dependencies
+# Install system dependencies required by PHP extensions
 RUN apt-get update && apt-get install -y \
     libzip-dev \
     libicu-dev \
@@ -10,17 +10,25 @@ RUN apt-get update && apt-get install -y \
     unzip \
     zip \
     git \
-    libssh-dev \
     libssl-dev \
     libjpeg-dev \
     libpng-dev \
     libfreetype6-dev \
-    libjpeg62-turbo-dev \
     libwebp-dev \
     libxpm-dev \
     libvpx-dev \
     libcurl4-openssl-dev \
     libgettextpo-dev \
+    libpng-dev \
+    libjpeg62-turbo-dev \
+    libpng-dev \
+    libfreetype6-dev \
+    zlib1g-dev \
+    libgmp-dev \
+    libreadline-dev \
+    libtidy-dev \
+    libdb-dev \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install \
         bcmath \
         calendar \
@@ -31,7 +39,6 @@ RUN apt-get update && apt-get install -y \
         fileinfo \
         ftp \
         gettext \
-        hash \
         iconv \
         intl \
         mbstring \
@@ -54,12 +61,11 @@ RUN apt-get update && apt-get install -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-
 # Set working directory
 WORKDIR /var/www/html
 
-# Copy app code
+# Copy app code into container
 COPY app/ /var/www/html/
 
-# Permissions
+# Set proper permissions
 RUN chown -R www-data:www-data /var/www/html
