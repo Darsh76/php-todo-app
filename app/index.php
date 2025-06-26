@@ -2,14 +2,10 @@
 session_start();
 
 // Redis test
-try {
-    $redis = new Redis();
-    $redis->connect('todo-redis-slave', 6379); // service name in docker-compose.yml
-    $redis->set("status", "✅ Redis is working!");
-    $message = $redis->get("status");
-} catch (Exception $e) {
-    $message = "❌ Redis connection failed: " . $e->getMessage();
-}
+$redis = new Redis();
+$redis->connect('todo-redis-slave', 6379);
+$message = $redis->get("status") ?: "ℹ️ No status key found on replica.";
+
 
 // Initialize session task list if not set
 if (!isset($_SESSION['tasks'])) {
