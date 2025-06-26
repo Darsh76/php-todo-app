@@ -70,7 +70,6 @@ RUN docker-php-ext-install \
     xmlwriter \
     xsl \
     zip \
-    opcache \
     && echo "✅ PHP core extensions installed"
 
 # Step 5: Install and enable PECL extensions
