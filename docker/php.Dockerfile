@@ -72,13 +72,10 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
 #     && echo "✅ PHP core extensions installed"
 
 # Step 4a: Install core extensions that must come first
-RUN docker-php-ext-install \
-    dom \
-    xml \
-    xmlreader \
-    xmlwriter \
-    xsl \
-    && echo "✅ XML-related extensions installed"
+RUN docker-php-ext-install dom && \
+    docker-php-ext-install xml xmlreader xmlwriter xsl && \
+    echo "✅ XML-related extensions installed"
+
 
 # Step 4b: Install remaining core PHP extensions
 RUN docker-php-ext-install \
