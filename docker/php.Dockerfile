@@ -1,7 +1,12 @@
 FROM php:8.2-fpm
 
-# Install system dependencies required by PHP extensions
+# Install build tools and system dependencies for PHP extensions
 RUN apt-get update && apt-get install -y \
+    autoconf \
+    build-essential \
+    pkg-config \
+    gettext \
+    libgettextpo-dev \
     libzip-dev \
     libicu-dev \
     libxml2-dev \
@@ -10,25 +15,24 @@ RUN apt-get update && apt-get install -y \
     unzip \
     zip \
     git \
+    libssh-dev \
     libssl-dev \
     libjpeg-dev \
     libpng-dev \
     libfreetype6-dev \
+    libjpeg62-turbo-dev \
     libwebp-dev \
     libxpm-dev \
     libvpx-dev \
     libcurl4-openssl-dev \
-    libgettextpo-dev \
-    libpng-dev \
-    libjpeg62-turbo-dev \
-    libpng-dev \
-    libfreetype6-dev \
     zlib1g-dev \
     libgmp-dev \
     libreadline-dev \
     libtidy-dev \
     libdb-dev \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-configure gd \
+        --with-freetype \
+        --with-jpeg \
     && docker-php-ext-install \
         bcmath \
         calendar \
