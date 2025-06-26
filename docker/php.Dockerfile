@@ -44,7 +44,6 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
 RUN docker-php-ext-install \
     dom \
     xml \
-    xmlreader \
     xmlwriter \
     xsl \
     bcmath \
@@ -60,7 +59,6 @@ RUN docker-php-ext-install \
     mbstring \
     mysqli \
     pdo \
-    pdo_mysql \
     pcntl \
     shmop \
     sockets \
