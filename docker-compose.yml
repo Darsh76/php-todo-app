@@ -7,7 +7,7 @@ services:
       dockerfile: docker/php.Dockerfile
     container_name: php-fpm
     volumes:
-      - ./app:/var/www/html
+      - ./app:/var/www/html        # Mount app code into PHP container
     networks:
       - todo-net
 
@@ -17,9 +17,11 @@ services:
       dockerfile: docker/nginx.Dockerfile
     container_name: nginx-todo
     ports:
-      - "80:80"
+      - "80:80"                    # Expose Nginx to host port 80
     depends_on:
       - php
+    volumes:
+      - ./app:/var/www/html        # Mount app code into Nginx container too
     networks:
       - todo-net
 
@@ -33,3 +35,4 @@ services:
 
 networks:
   todo-net:
+    driver: bridge
