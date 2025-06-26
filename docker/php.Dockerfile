@@ -64,7 +64,6 @@ RUN docker-php-ext-install \
     sysvmsg \
     sysvsem \
     sysvshm \
-    tokenizer \
     xml \
     xmlreader \
     xmlwriter \
