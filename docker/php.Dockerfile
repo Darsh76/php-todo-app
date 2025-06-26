@@ -37,39 +37,6 @@ RUN apt-get install -y \
     libdb-dev \
     && echo "✅ All PHP extension dependencies installed"
 
-# Step 3: Configure GD library with proper flags
-RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && echo "✅ GD configured"
-
-# Step 4: Install PHP core extensions (grouped for clarity)
-RUN docker-php-ext-install \
-    bcmath \
-    calendar \
-    ctype \
-    curl \
-    dom \
-    exif \
-    fileinfo \
-    ftp \
-    gettext \
-    iconv \
-    intl \
-    mbstring \
-    mysqli \
-    pdo_mysql \
-    pcntl \
-    shmop \
-    sockets \
-    sysvmsg \
-    sysvsem \
-    sysvshm \
-    xml \
-    xmlreader \
-    xmlwriter \
-    xsl \
-    zip \
-    && echo "✅ PHP extensions installed"
-
 # Step 5: Install and enable PECL extensions
 RUN pecl install redis igbinary \
     && docker-php-ext-enable redis igbinary \
