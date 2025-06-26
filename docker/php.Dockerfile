@@ -41,13 +41,51 @@ RUN apt-get install -y \
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
     && echo "✅ GD configured"
 
-# Step 4: Install PHP core extensions
+# # Step 4: Install PHP core extensions
+# RUN docker-php-ext-install \
+#     bcmath \
+#     calendar \
+#     ctype \
+#     curl \
+#     dom \
+#     exif \
+#     fileinfo \
+#     ftp \
+#     gettext \
+#     iconv \
+#     intl \
+#     mbstring \
+#     mysqli \
+#     pdo \
+#     pdo_mysql \
+#     pcntl \
+#     shmop \
+#     sockets \
+#     sysvmsg \
+#     sysvsem \
+#     sysvshm \
+#     xml \
+#     xmlreader \
+#     xmlwriter \
+#     xsl \
+#     zip \
+#     && echo "✅ PHP core extensions installed"
+
+# Step 4a: Install core extensions that must come first
+RUN docker-php-ext-install \
+    dom \
+    xml \
+    xmlreader \
+    xmlwriter \
+    xsl \
+    && echo "✅ XML-related extensions installed"
+
+# Step 4b: Install remaining core PHP extensions
 RUN docker-php-ext-install \
     bcmath \
     calendar \
     ctype \
     curl \
-    dom \
     exif \
     fileinfo \
     ftp \
@@ -64,12 +102,9 @@ RUN docker-php-ext-install \
     sysvmsg \
     sysvsem \
     sysvshm \
-    xml \
-    xmlreader \
-    xmlwriter \
-    xsl \
     zip \
-    && echo "✅ PHP core extensions installed"
+    && echo "✅ Other PHP extensions installed"
+
 
 # Step 5: Install and enable PECL extensions
 RUN pecl install redis igbinary \
