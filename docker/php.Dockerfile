@@ -20,6 +20,7 @@ RUN apt-get update && apt-get install -y \
     libxpm-dev \
     libvpx-dev \
     libcurl4-openssl-dev \
+    libgettextpo-dev \
     && docker-php-ext-install \
         bcmath \
         calendar \
@@ -52,6 +53,7 @@ RUN apt-get update && apt-get install -y \
     && docker-php-ext-enable redis igbinary \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
+
 
 # Set working directory
 WORKDIR /var/www/html
