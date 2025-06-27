@@ -100,3 +100,4 @@ EXPOSE 80 443 6379
 
 # 🔁 Start all services via Supervisor
 CMD ["/usr/bin/supervisord"]
+    

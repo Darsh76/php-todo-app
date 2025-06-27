@@ -47,7 +47,7 @@ if (!isset($_SESSION['tasks'])) {
 </head>
 <body>
     <div class="container">
-        <h2>My To-Do List</h2>
+        <h2>My To-Do List 🚀 Deployed via Bitbucket!</h2>
 
         <!-- Redis status message -->
         <div style="padding: 10px; margin-bottom: 15px; text-align: center; background: #e8ffe8; border: 1px solid #8c8;">
