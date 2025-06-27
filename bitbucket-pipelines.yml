@@ -10,6 +10,11 @@ pipelines:
           caches:
             - docker
           script:
+            - echo "🔧 Installing AWS CLI (required for ECR/ECS)"
+            - apt-get update && apt-get install -y python3-pip curl unzip
+            - pip3 install --upgrade awscli
+            - aws --version
+
             - echo "🔧 Setting up variables"
             - export DATE_TAG=$(date +%d%m%y)
             - export ECR_REPO="$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$IMAGE_NAME"
@@ -18,20 +23,22 @@ pipelines:
             - echo "🔐 Logging into AWS ECR"
             - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPO
 
-            - echo "🐳 Building Docker image:"
+            - echo "🐳 Building Docker image"
             - docker build -t $LOCAL_TAG .
 
             - echo "🏷 Tagging image as :latest and :$DATE_TAG"
             - docker tag $LOCAL_TAG $ECR_REPO:latest
             - docker tag $LOCAL_TAG $ECR_REPO:$DATE_TAG
 
-            - echo "📦 Pushing to ECR"
+            - echo "📦 Pushing images to ECR"
             - docker push $ECR_REPO:latest
             - docker push $ECR_REPO:$DATE_TAG
 
-            - echo "🚀 Updating ECS service"
+            - echo "🚀 Deploying latest image to ECS"
             - aws ecs update-service \
                 --cluster php-todo-cluster \
                 --service php-todo-service \
                 --force-new-deployment \
                 --region $AWS_REGION
+
+            - echo "✅ Pipeline completed successfully!"
