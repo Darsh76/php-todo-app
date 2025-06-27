@@ -78,6 +78,11 @@ RUN apt-get clean && rm -rf /var/lib/apt/lists/* \
 
 # 5️⃣ Nginx configuration
 COPY ./docker-files/nginx.conf /etc/nginx/nginx.conf
+COPY ./docker-files/server.conf /etc/nginx/conf.d/default.conf
+# Ensure Nginx user has the right permissions
+RUN chown -R www-data:www-data /var/www/html \
+    && chmod -R 755 /var/www/html \
+    && echo "✅ Nginx configuration complete"
 
 # 6️⃣ Supervisor configuration
 COPY ./docker-files/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
