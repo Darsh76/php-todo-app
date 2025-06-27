@@ -18,7 +18,7 @@ pipelines:
             - echo "🔐 Logging into AWS ECR"
             - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPO
 
-            - echo "🐳 Building Docker image: $LOCAL_TAG"
+            - echo "🐳 Building Docker image:"
             - docker build -t $LOCAL_TAG .
 
             - echo "🏷 Tagging image as :latest and :$DATE_TAG"
