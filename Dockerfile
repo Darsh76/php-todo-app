@@ -1,8 +1,8 @@
 FROM php:8.2-fpm
 
-LABEL maintainer="dxrsh10@gmail.com"
+LABEL maintainer="your-team@example.com"
 
-# 1️⃣ Install system build tools and PHP/Nginx/Redis/Utility dependencies
+# 1️⃣ Install base packages and dependencies
 RUN apt-get update && apt-get install -y \
     autoconf \
     build-essential \
@@ -38,68 +38,65 @@ RUN apt-get update && apt-get install -y \
     supervisor \
     && echo "✅ All system and PHP dependencies installed"
 
-# 2️⃣ Configure and install PHP extensions
-RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install \
-        dom \
-        xml \
-        xmlwriter \
-        xsl \
-        bcmath \
-        calendar \
-        ctype \
-        curl \
-        exif \
-        fileinfo \
-        ftp \
-        gettext \
-        iconv \
-        intl \
-        mbstring \
-        mysqli \
-        pdo \
-        pcntl \
-        shmop \
-        sockets \
-        sysvmsg \
-        sysvsem \
-        sysvshm \
-        zip \
-    && echo "✅ PHP core extensions installed"
+# 2️⃣ Configure PHP extensions
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg && \
+    docker-php-ext-install \
+    dom \
+    xml \
+    xmlwriter \
+    xsl \
+    bcmath \
+    calendar \
+    ctype \
+    curl \
+    exif \
+    fileinfo \
+    ftp \
+    gettext \
+    iconv \
+    intl \
+    mbstring \
+    mysqli \
+    pdo \
+    pcntl \
+    shmop \
+    sockets \
+    sysvmsg \
+    sysvsem \
+    sysvshm \
+    zip && \
+    echo "✅ PHP extensions installed"
 
 # 3️⃣ Install PECL extensions
-RUN pecl install redis igbinary \
-    && docker-php-ext-enable redis igbinary \
-    && echo "✅ PECL extensions installed"
+RUN pecl install redis igbinary && \
+    docker-php-ext-enable redis igbinary && \
+    echo "✅ PECL extensions installed"
 
 # 4️⃣ Cleanup
-RUN apt-get clean && rm -rf /var/lib/apt/lists/* \
-    && echo "✅ Cleanup complete"
+RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# 5️⃣ Nginx configuration
+# 5️⃣ Copy Nginx and Supervisor config
 COPY ./docker-files/nginx.conf /etc/nginx/nginx.conf
 COPY ./docker-files/server.conf /etc/nginx/conf.d/default.conf
-# Ensure Nginx user has the right permissions
-RUN chown -R www-data:www-data /var/www/html \
-    && chmod -R 755 /var/www/html \
-    && echo "✅ Nginx configuration complete"
-
-# 6️⃣ Supervisor configuration
 COPY ./docker-files/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
-# 7️⃣ Create runtime directories
-RUN mkdir -p /var/run/php /tmp/nginx_cache \
-    && chmod -R 777 /tmp/nginx_cache \
-    && chown -R www-data:www-data /var/run/php \
-    && chmod 755 /var/run/php
+# 6️⃣ Copy SSL certificates (Certbot-generated)
+COPY ./docker-files/certs/fullchain.pem /etc/ssl/certs/fullchain.pem
+COPY ./docker-files/certs/privkey.pem /etc/ssl/private/privkey.pem
 
-# 8️⃣ Application code (optional placeholder)
+# 7️⃣ Create necessary directories
+RUN mkdir -p /var/run/php /tmp/nginx_cache && \
+    chmod -R 777 /tmp/nginx_cache && \
+    chown -R www-data:www-data /var/run/php && \
+    chmod 755 /var/run/php
+
+# 8️⃣ App code
 WORKDIR /var/www/html
 COPY ./app /var/www/html
 RUN chown -R www-data:www-data /var/www/html
 
-# 🔌 Expose Nginx and Redis ports
-EXPOSE 80 6379
+# 🔌 Expose HTTP, HTTPS, Redis ports
+EXPOSE 80 443 6379
 
-# 🚀 Start all services
+# 🔁 Start all services via Supervisor
 CMD ["/usr/bin/supervisord"]
