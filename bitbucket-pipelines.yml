@@ -34,11 +34,8 @@ pipelines:
             - docker push $ECR_REPO:latest
             - docker push $ECR_REPO:$DATE_TAG
 
-            - echo "🚀 Deploying latest image to ECS"
-            - aws ecs update-service \
-                --cluster php-todo-cluster \
-                --service php-todo-service \
-                --force-new-deployment \
-                --region $AWS_REGION
+            - echo "🚀 Updating ECS service"
+            - aws ecs update-service --cluster php-todo-cluster --service php-todo-service --force-new-deployment --region $AWS_REGION
+
 
             - echo "✅ Pipeline completed successfully!"
