@@ -5,7 +5,7 @@ session_start();
 $redis = new Redis();
 
 try {
-    $redis->connect('todo-redis-slave', 6379);
+    $redis->connect('127.0.0.1', 6379);
 
     // Get Redis replication info
     $info = $redis->info('replication');
