@@ -25,7 +25,7 @@ pipelines:
             - echo "🔐 Logging into ECR"
             - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPO
 
-            - echo "🐳 Building Docker image: $LOCAL_TAG"
+            - echo "🐳 Building Docker image"
             - docker build -t $LOCAL_TAG .
 
             - echo "🏷 Tagging image as :latest and :$TAG"
@@ -40,4 +40,4 @@ pipelines:
             - aws ecs update-service --cluster php-todo-cluster --service php-todo-service --force-new-deployment --region $AWS_REGION
 
 
-            - echo "✅ Deployment complete: $TAG"
+            - echo "✅ Deployment complete"
