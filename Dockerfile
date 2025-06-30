@@ -4,20 +4,20 @@ FROM php:8.2-fpm
 # 1️⃣ Base dependencies
 # ------------------------------------------------------
 RUN apt-get update && apt-get install -y \
-    unzip zip git curl wget vim jq \
+    unzip zip git curl wget vim jq groff less\
     build-essential autoconf pkg-config \
     python3-pip \
     nginx redis-server supervisor \
     && echo "✅ Core tools installed"
-    
+
 # ------------------------------------------------------
 # 4️⃣ Install AWS CLI (via pip)
 # ------------------------------------------------------
-RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "/tmp/awscliv2.zip" \
-    && unzip /tmp/awscliv2.zip -d /tmp \
-    && /tmp/aws/install \
-    && rm -rf /tmp/aws /tmp/awscliv2.zip \
-    && echo "✅ AWS CLI v2 installed"
+RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "/tmp/awscliv2.zip" && \
+    unzip /tmp/awscliv2.zip -d /tmp && \
+    /tmp/aws/install && \
+    rm -rf /tmp/aws /tmp/awscliv2.zip && \
+    echo "✅ AWS CLI v2 installed"
 
 # ------------------------------------------------------
 # 2️⃣ PHP extensions & build dependencies
