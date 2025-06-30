@@ -1,51 +1,50 @@
 <?php
 session_start();
 
-// Load environment values
-$appTitle = getenv('APP_TITLE') ?: 'My To-Do List';
-$appVersion = getenv('APP_VERSION') ?: 'v0.0.1';
-$footerText = getenv('FOOTER_TEXT') ?: 'Default deployment footer';
+// Load Composer autoloader and .env
+require_once __DIR__ . '/../vendor/autoload.php';
 
-// Redis status section
+$dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../');
+$dotenv->load();
+
+// Load environment values
+$appTitle    = getenv('APP_TITLE') ?: 'My To-Do List';
+$appVersion  = getenv('APP_VERSION') ?: 'v0.0.1';
+$footerText  = getenv('FOOTER_TEXT') ?: 'Default deployment footer';
+
+// Redis status
 $redisMessage = '';
 $masterStatus = '❌ Unknown';
+$redisRole = 'Unknown';
+$masterHost = 'N/A';
 
 try {
     $redis = new Redis();
     $redis->connect('127.0.0.1', 6379);
 
     $info = $redis->info('replication');
-    $role = $info['role'] ?? 'unknown';
+    $redisRole = $info['role'] ?? 'unknown';
 
-    if ($role === 'slave') {
+    if ($redisRole === 'master') {
+        $redis->set("status", "✅ Redis master is working");
+        $redisMessage = "✅ Role: <strong>master</strong><br>📦 Status key set.";
+    } elseif ($redisRole === 'slave') {
         $masterHost = $info['master_host'] ?? 'N/A';
         $masterPort = $info['master_port'] ?? '6379';
+        $masterLinkStatus = $info['master_link_status'] ?? 'unknown';
 
-        // Try pinging the master
-        $master = new Redis();
-        $masterConnected = @$master->connect($masterHost, $masterPort, 1); // 1s timeout
+        $masterStatus = $masterLinkStatus === 'up' ? '🟢 UP' : '🔴 DOWN';
 
-        if ($masterConnected && $master->ping() === '+PONG') {
-            $masterStatus = '🟢 UP';
-        } else {
-            $masterStatus = '🔴 DOWN';
-        }
-
-        $redisMessage = "🟢 Connected as Redis <strong>replica</strong><br>
-                         📡 Master: <strong>$masterHost:$masterPort</strong><br>
-                         🩺 Master status: <strong>$masterStatus</strong>";
+        $redisMessage = "🟢 Role: <strong>replica</strong><br>" .
+                        "📡 Master IP: <strong>$masterHost:$masterPort</strong><br>" .
+                        "🩺 Master link status: <strong>$masterStatus</strong>";
 
         if ($status = $redis->get("status")) {
             $redisMessage .= "<br>📦 Redis status key: $status";
         }
-
-    } elseif ($role === 'master') {
-        $redis->set("status", "✅ Redis master is working");
-        $redisMessage = "✅ Connected to Redis <strong>master</strong> and wrote test key.";
     } else {
         $redisMessage = "⚠️ Connected to Redis but role is <strong>unknown</strong>.";
     }
-
 } catch (Exception $e) {
     $redisMessage = "❌ Redis connection failed: " . $e->getMessage();
 }

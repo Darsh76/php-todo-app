@@ -24,17 +24,22 @@ RUN apt-get install -y \
     && docker-php-ext-enable redis igbinary \
     && echo "✅ PHP & PECL extensions installed"
 
-# 3️⃣ Install AWS CLI v2
+# 3️⃣ Install Composer globally
+RUN curl -sS https://getcomposer.org/installer | php && \
+    mv composer.phar /usr/local/bin/composer && \
+    echo "✅ Composer installed"
+
+# 4️⃣ Install AWS CLI v2
 RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "/tmp/awscliv2.zip" && \
     unzip /tmp/awscliv2.zip -d /tmp && \
     /tmp/aws/install && \
     rm -rf /tmp/aws /tmp/awscliv2.zip && \
     echo "✅ AWS CLI v2 installed"
 
-# 4️⃣ Cleanup
+# 5️⃣ Cleanup
 RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# 5️⃣ SSM: Fetch .env
+# 6️⃣ SSM: Fetch .env
 ARG AWS_PARAMETER_NAME
 ARG AWS_REGION
 ARG AWS_ACCESS_KEY_ID
@@ -52,24 +57,28 @@ RUN mkdir -p /var/www/html && \
         --region "${AWS_REGION}" \
         --query 'Parameter.Value' > /var/www/html/.env
 
-# 6️⃣ Configs
+# 7️⃣ Copy configuration files
 COPY ./docker-files/nginx.conf /etc/nginx/nginx.conf
 COPY ./docker-files/server.conf /etc/nginx/conf.d/default.conf
 COPY ./docker-files/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
-# 7️⃣ Runtime dirs
+# 8️⃣ Application setup
+WORKDIR /var/www/html
+
+# Copy Composer project metadata & install dependencies
+COPY composer.json composer.lock ./
+RUN composer install --no-interaction --prefer-dist --no-dev
+
+# Copy app source
+COPY ./app ./app
+RUN chown -R www-data:www-data /var/www/html
+
+# 9️⃣ Runtime folders & permissions
 RUN mkdir -p /var/run/php /tmp/nginx_cache \
     && chmod -R 777 /tmp/nginx_cache \
     && chown -R www-data:www-data /var/run/php \
     && chmod 755 /var/run/php
 
-# 8️⃣ App
-WORKDIR /var/www/html
-COPY ./app /var/www/html
-RUN chown -R www-data:www-data /var/www/html
-
-# 9️⃣ Ports
+# 🔟 Expose ports & run
 EXPOSE 80 443 6379
-
-# 🔟 Entrypoint
 CMD ["/usr/bin/supervisord"]
