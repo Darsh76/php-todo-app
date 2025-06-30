@@ -1,0 +1,70 @@
+name: Build and Deploy to ECS
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Docker Build & ECS Deploy
+    runs-on: ubuntu-latest
+
+    env:
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+      IMAGE_NAME: ${{ secrets.IMAGE_NAME }}
+
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v3
+
+      - name: 🔧 Set Up Docker Build Metadata
+        id: vars
+        run: |
+          echo "DATE_TIME_TAG=$(date +%d%m%y-%H%M)" >> $GITHUB_ENV
+          echo "SHORT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+          echo "TAG=build-$(date +%d%m%y-%H%M)-$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+          echo "ECR_REPO=${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${IMAGE_NAME}" >> $GITHUB_ENV
+          echo "AWS_PARAMETER_NAME=/php-todo/${GITHUB_REF_NAME}/env" >> $GITHUB_ENV
+
+      - name: 🔐 Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: 🐳 Login to Amazon ECR
+        run: |
+          aws ecr get-login-password --region "$AWS_REGION" | docker login --username AWS --password-stdin "$ECR_REPO"
+
+      - name: 🐳 Build Docker Image
+        run: |
+          docker build \
+            --build-arg AWS_PARAMETER_NAME="$AWS_PARAMETER_NAME" \
+            --build-arg AWS_REGION="$AWS_REGION" \
+            --build-arg AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" \
+            --build-arg AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" \
+            -t "$ECR_REPO:$TAG" \
+            -t "$ECR_REPO:latest" .
+
+      - name: 📦 Push Docker Images to ECR
+        run: |
+          docker push "$ECR_REPO:$TAG"
+          docker push "$ECR_REPO:latest"
+
+      - name: 🚀 Deploy to ECS
+        run: |
+          aws ecs update-service \
+            --cluster php-todo-cluster \
+            --service php-todo-service \
+            --force-new-deployment \
+            --region "$AWS_REGION"
+
+      - name: ✅ Confirm ECS Deployment
+        run: |
+          aws ecs wait services-stable \
+            --cluster php-todo-cluster \
+            --services php-todo-service \
+            --region "$AWS_REGION"
