@@ -1,37 +1,56 @@
 <?php
 session_start();
 
-// 🔐 ENV from SSM
+// Load environment values
 $appTitle = getenv('APP_TITLE') ?: 'My To-Do List';
 $appVersion = getenv('APP_VERSION') ?: 'v0.0.1';
-$footerText = getenv('FOOTER_TEXT') ?: 'Deployed locally';
+$footerText = getenv('FOOTER_TEXT') ?: 'Default deployment footer';
 
-// 🔁 Redis test
+// Redis status section
 $redisMessage = '';
+$masterStatus = '❌ Unknown';
+
 try {
     $redis = new Redis();
-    $redis->connect('127.0.0.1', 6379); // local Redis inside the container
+    $redis->connect('127.0.0.1', 6379);
 
     $info = $redis->info('replication');
     $role = $info['role'] ?? 'unknown';
 
     if ($role === 'slave') {
-        $redisMessage = "🟢 Connected to Redis <strong>replica</strong><br>📡 Master: <strong>" . ($info['master_host'] ?? 'unknown') . "</strong>";
+        $masterHost = $info['master_host'] ?? 'N/A';
+        $masterPort = $info['master_port'] ?? '6379';
+
+        // Try pinging the master
+        $master = new Redis();
+        $masterConnected = @$master->connect($masterHost, $masterPort, 1); // 1s timeout
+
+        if ($masterConnected && $master->ping() === '+PONG') {
+            $masterStatus = '🟢 UP';
+        } else {
+            $masterStatus = '🔴 DOWN';
+        }
+
+        $redisMessage = "🟢 Connected as Redis <strong>replica</strong><br>
+                         📡 Master: <strong>$masterHost:$masterPort</strong><br>
+                         🩺 Master status: <strong>$masterStatus</strong>";
+
         if ($status = $redis->get("status")) {
             $redisMessage .= "<br>📦 Redis status key: $status";
         }
+
     } elseif ($role === 'master') {
-        $redis->set("status", "✅ Redis is working!");
+        $redis->set("status", "✅ Redis master is working");
         $redisMessage = "✅ Connected to Redis <strong>master</strong> and wrote test key.";
     } else {
-        $redisMessage = "⚠️ Redis connected, but unknown role.";
+        $redisMessage = "⚠️ Connected to Redis but role is <strong>unknown</strong>.";
     }
 
 } catch (Exception $e) {
     $redisMessage = "❌ Redis connection failed: " . $e->getMessage();
 }
 
-// Session setup
+// Session task list
 if (!isset($_SESSION['tasks'])) {
     $_SESSION['tasks'] = [];
 }
@@ -47,18 +66,18 @@ if (!isset($_SESSION['tasks'])) {
 <div class="container">
     <h2><?= htmlspecialchars($appTitle) ?></h2>
 
-    <!-- Redis Status -->
+    <!-- Redis status -->
     <div style="padding:10px; margin-bottom:15px; background:#f8f8ff; border:1px solid #ccc; text-align:center;">
         <?= $redisMessage ?>
     </div>
 
-    <!-- Form -->
+    <!-- Task form -->
     <form action="add.php" method="POST">
         <input type="text" name="task" placeholder="Enter a new task" required>
         <button type="submit">Add Task</button>
     </form>
 
-    <!-- Task List -->
+    <!-- Task list -->
     <ul>
         <?php foreach ($_SESSION['tasks'] as $index => $task): ?>
             <li>

@@ -10,36 +10,38 @@ pipelines:
           caches:
             - docker
           script:
-            - echo "🔧 Installing dependencies"
-            - apt-get update && apt-get install -y python3-pip curl unzip jq
+            - echo "🔧 Installing AWS CLI"
+            - apt-get update && apt-get install -y python3-pip curl unzip
             - pip3 install --upgrade awscli
 
-            - echo "🔧 Setting tagging variables"
+            - echo "🔧 Setting up build variables"
             - export DATE_TIME_TAG=$(date +%d%m%y-%H%M)
             - export SHORT_SHA=$(git rev-parse --short HEAD)
             - export TAG="build-$DATE_TIME_TAG-$SHORT_SHA"
             - export ECR_REPO="$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$IMAGE_NAME"
+            - export AWS_PARAMETER_NAME="/php-todo/$BITBUCKET_BRANCH/env"
 
-            - echo "🔐 Logging into Amazon ECR"
+            - echo "🔐 Logging into ECR"
             - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPO
-            - echo "🔐 Successfully logged into ECR"
-            - echo "📦 Preparing to build and push Docker image with tag $TAG"
 
-            - echo "📥 Pulling .env config from SSM Parameter Store"
-            - export PARAM_NAME="/php-todo/$BITBUCKET_BRANCH/env"
-            - aws ssm get-parameter --name "$PARAM_NAME" --region $AWS_REGION --with-decryption --query "Parameter.Value" --output text > .env
+            - echo "🐳 Building Docker image $TAG"
+            - docker build \
+                --build-arg AWS_PARAMETER_NAME=$AWS_PARAMETER_NAME \
+                --build-arg AWS_REGION=$AWS_REGION \
+                --build-arg AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
+                --build-arg AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
+                -t $ECR_REPO:$TAG \
+                -t $ECR_REPO:latest .
 
-            - echo "📄 Injected .env content:"
-            - cat .env
-
-            - echo "🐳 Building Docker image with tag"
-            - docker build -t $ECR_REPO:latest -t $ECR_REPO:$TAG .
-
-            - echo "📦 Pushing Docker image to ECR"
+            - echo "📦 Pushing to ECR"
             - docker push $ECR_REPO:$TAG
             - docker push $ECR_REPO:latest
 
-            - echo "🚀 Updating ECS service"
-            - aws ecs update-service --cluster php-todo-cluster --service php-todo-service --force-new-deployment --region $AWS_REGION
+            - echo "🚀 Deploying to ECS"
+            - aws ecs update-service \
+                --cluster php-todo-cluster \
+                --service php-todo-service \
+                --force-new-deployment \
+                --region $AWS_REGION
 
-            - echo "✅ Deployment completed successfully with tag"
+            - echo "✅ Deployment complete $TAG"
