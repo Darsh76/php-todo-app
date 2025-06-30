@@ -22,26 +22,28 @@ pipelines:
             - export AWS_PARAMETER_NAME="/php-todo/$BITBUCKET_BRANCH/env"
 
             - echo "🔐 Logging into ECR"
-            - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPO
+            - aws ecr get-login-password --region "$AWS_REGION" | docker login --username AWS --password-stdin "$ECR_REPO"
 
-            - echo "🐳 Building Docker image $TAG"
-            - docker build \
-                --build-arg AWS_PARAMETER_NAME=$AWS_PARAMETER_NAME \
-                --build-arg AWS_REGION=$AWS_REGION \
-                --build-arg AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
-                --build-arg AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
-                -t $ECR_REPO:$TAG \
-                -t $ECR_REPO:latest .
+            - |
+              echo "🐳 Building Docker image"
+              docker build \
+                --build-arg AWS_PARAMETER_NAME="$AWS_PARAMETER_NAME" \
+                --build-arg AWS_REGION="$AWS_REGION" \
+                --build-arg AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" \
+                --build-arg AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" \
+                -t "$ECR_REPO:$TAG" \
+                -t "$ECR_REPO:latest" \
+                .
 
             - echo "📦 Pushing to ECR"
-            - docker push $ECR_REPO:$TAG
-            - docker push $ECR_REPO:latest
+            - docker push "$ECR_REPO:$TAG"
+            - docker push "$ECR_REPO:latest"
 
             - echo "🚀 Deploying to ECS"
             - aws ecs update-service \
                 --cluster php-todo-cluster \
                 --service php-todo-service \
                 --force-new-deployment \
-                --region $AWS_REGION
+                --region "$AWS_REGION"
 
             - echo "✅ Deployment complete $TAG"
