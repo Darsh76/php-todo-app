@@ -40,10 +40,7 @@ pipelines:
             - docker push "$ECR_REPO:latest"
 
             - echo "🚀 Deploying to ECS"
-            - aws ecs update-service \
-                --cluster php-todo-cluster \
-                --service php-todo-service \
-                --force-new-deployment \
-                --region "$AWS_REGION"
+            - aws ecs update-service --cluster php-todo-cluster --service php-todo-service --force-new-deployment --region "$AWS_REGION"
+
 
             - echo "✅ Deployment complete $TAG"
