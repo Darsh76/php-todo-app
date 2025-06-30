@@ -36,7 +36,8 @@ RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 # ------------------------------------------------------
 # 4️⃣ Install AWS CLI (via pip)
 # ------------------------------------------------------
-RUN pip3 install --upgrade awscli && echo "✅ AWS CLI installed"
+RUN apt-get update && apt-get install -y awscli && echo "✅ AWS CLI installed"
+
 
 # ------------------------------------------------------
 # 5️⃣ SSM: Fetch .env file via build arguments
