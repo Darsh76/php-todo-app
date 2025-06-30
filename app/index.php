@@ -8,9 +8,9 @@ $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../');
 $dotenv->load();
 
 // Load environment values
-$appTitle    = getenv('APP_TITLE') ?: 'My To-Do List';
-$appVersion  = getenv('APP_VERSION') ?: 'v0.0.1';
-$footerText  = getenv('FOOTER_TEXT') ?: 'Default deployment footer';
+$appTitle    = $_ENV['APP_TITLE'] ?? 'My To-Do List';
+$appVersion  = $_ENV['APP_VERSION'] ?? 'v0.0.1';
+$footerText  = $_ENV['FOOTER_TEXT'] ?? 'Default deployment footer';
 
 // Redis status
 $redisMessage = '';
