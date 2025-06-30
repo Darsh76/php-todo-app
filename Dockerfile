@@ -9,6 +9,15 @@ RUN apt-get update && apt-get install -y \
     python3-pip \
     nginx redis-server supervisor \
     && echo "✅ Core tools installed"
+    
+# ------------------------------------------------------
+# 4️⃣ Install AWS CLI (via pip)
+# ------------------------------------------------------
+RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "/tmp/awscliv2.zip" \
+    && unzip /tmp/awscliv2.zip -d /tmp \
+    && /tmp/aws/install \
+    && rm -rf /tmp/aws /tmp/awscliv2.zip \
+    && echo "✅ AWS CLI v2 installed"
 
 # ------------------------------------------------------
 # 2️⃣ PHP extensions & build dependencies
@@ -36,7 +45,11 @@ RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 # ------------------------------------------------------
 # 4️⃣ Install AWS CLI (via pip)
 # ------------------------------------------------------
-RUN apt-get update && apt-get install -y awscli && echo "✅ AWS CLI installed"
+RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "/tmp/awscliv2.zip" \
+    && unzip /tmp/awscliv2.zip -d /tmp \
+    && /tmp/aws/install \
+    && rm -rf /tmp/aws /tmp/awscliv2.zip \
+    && echo "✅ AWS CLI v2 installed"
 
 
 # ------------------------------------------------------
