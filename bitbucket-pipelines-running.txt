@@ -1,0 +1,43 @@
+image: atlassian/default-image:4
+
+pipelines:
+  branches:
+    main:
+      - step:
+          name: Build, Tag, Push, and Deploy
+          services:
+            - docker
+          caches:
+            - docker
+          script:
+            - echo "🔧 Installing AWS CLI"
+            - apt-get update && apt-get install -y python3-pip curl unzip
+            - pip3 install --upgrade awscli
+            - aws --version
+
+            - echo "🔧 Setting up tagging variables"
+            - export DATE_TIME_TAG=$(date +%d%m%y-%H%M)
+            - export SHORT_SHA=$(git rev-parse --short HEAD)
+            - export TAG="$DATE_TIME_TAG-$SHORT_SHA"
+            - export ECR_REPO="$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$IMAGE_NAME"
+            - export LOCAL_TAG="$IMAGE_NAME:$TAG"
+
+            - echo "🔐 Logging into ECR"
+            - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPO
+
+            - echo "🐳 Building Docker image"
+            - docker build -t $LOCAL_TAG .
+
+            - echo "🏷 Tagging image as :latest and :$TAG"
+            - docker tag $LOCAL_TAG $ECR_REPO:$TAG
+            - docker tag $LOCAL_TAG $ECR_REPO:latest
+
+            - echo "📦 Pushing images to ECR"
+            - docker push $ECR_REPO:$TAG
+            - docker push $ECR_REPO:latest
+
+            - echo "🚀 Deploying to ECS"
+            - aws ecs update-service --cluster php-todo-cluster --service php-todo-service --force-new-deployment --region $AWS_REGION
+
+
+            - echo "✅ Deployment complete"
