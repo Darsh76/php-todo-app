@@ -1,27 +1,14 @@
 FROM php:8.2-fpm
 
-# ------------------------------------------------------
 # 1️⃣ Base dependencies
-# ------------------------------------------------------
 RUN apt-get update && apt-get install -y \
-    unzip zip git curl wget vim jq groff less\
+    unzip zip git curl wget vim jq groff less \
     build-essential autoconf pkg-config \
-    python3-pip \
+    python3 python3-pip ca-certificates \
     nginx redis-server supervisor \
     && echo "✅ Core tools installed"
 
-# ------------------------------------------------------
-# 4️⃣ Install AWS CLI (via pip)
-# ------------------------------------------------------
-RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "/tmp/awscliv2.zip" && \
-    unzip /tmp/awscliv2.zip -d /tmp && \
-    /tmp/aws/install && \
-    rm -rf /tmp/aws /tmp/awscliv2.zip && \
-    echo "✅ AWS CLI v2 installed"
-
-# ------------------------------------------------------
-# 2️⃣ PHP extensions & build dependencies
-# ------------------------------------------------------
+# 2️⃣ PHP extensions & PECL
 RUN apt-get install -y \
     libxml2-dev libxslt1-dev libonig-dev libzip-dev libicu-dev libssl-dev \
     libjpeg62-turbo-dev libpng-dev libfreetype6-dev libwebp-dev libxpm-dev libvpx-dev \
@@ -37,24 +24,17 @@ RUN apt-get install -y \
     && docker-php-ext-enable redis igbinary \
     && echo "✅ PHP & PECL extensions installed"
 
-# ------------------------------------------------------
-# 3️⃣ Cleanup after install to reduce image size
-# ------------------------------------------------------
+# 3️⃣ Install AWS CLI v2
+RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "/tmp/awscliv2.zip" && \
+    unzip /tmp/awscliv2.zip -d /tmp && \
+    /tmp/aws/install && \
+    rm -rf /tmp/aws /tmp/awscliv2.zip && \
+    echo "✅ AWS CLI v2 installed"
+
+# 4️⃣ Cleanup
 RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# ------------------------------------------------------
-# 4️⃣ Install AWS CLI (via pip)
-# ------------------------------------------------------
-RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "/tmp/awscliv2.zip" \
-    && unzip /tmp/awscliv2.zip -d /tmp \
-    && /tmp/aws/install \
-    && rm -rf /tmp/aws /tmp/awscliv2.zip \
-    && echo "✅ AWS CLI v2 installed"
-
-
-# ------------------------------------------------------
-# 5️⃣ SSM: Fetch .env file via build arguments
-# ------------------------------------------------------
+# 5️⃣ SSM: Fetch .env
 ARG AWS_PARAMETER_NAME
 ARG AWS_REGION
 ARG AWS_ACCESS_KEY_ID
@@ -64,42 +44,32 @@ ENV AWS_REGION=${AWS_REGION} \
     AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \
     AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
 
-RUN mkdir -p /var/www/html \
-    && aws ssm get-parameter \
+RUN mkdir -p /var/www/html && \
+    aws ssm get-parameter \
         --with-decryption \
         --name "${AWS_PARAMETER_NAME}" \
         --output text \
         --region "${AWS_REGION}" \
         --query 'Parameter.Value' > /var/www/html/.env
 
-# ------------------------------------------------------
-# 6️⃣ Configuration: Nginx, Supervisor
-# ------------------------------------------------------
+# 6️⃣ Configs
 COPY ./docker-files/nginx.conf /etc/nginx/nginx.conf
 COPY ./docker-files/server.conf /etc/nginx/conf.d/default.conf
 COPY ./docker-files/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
-# ------------------------------------------------------
-# 7️⃣ Runtime directories & permissions
-# ------------------------------------------------------
+# 7️⃣ Runtime dirs
 RUN mkdir -p /var/run/php /tmp/nginx_cache \
     && chmod -R 777 /tmp/nginx_cache \
     && chown -R www-data:www-data /var/run/php \
     && chmod 755 /var/run/php
 
-# ------------------------------------------------------
-# 8️⃣ Application code
-# ------------------------------------------------------
+# 8️⃣ App
 WORKDIR /var/www/html
 COPY ./app /var/www/html
 RUN chown -R www-data:www-data /var/www/html
 
-# ------------------------------------------------------
 # 9️⃣ Ports
-# ------------------------------------------------------
 EXPOSE 80 443 6379
 
-# ------------------------------------------------------
 # 🔟 Entrypoint
-# ------------------------------------------------------
 CMD ["/usr/bin/supervisord"]
